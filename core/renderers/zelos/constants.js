@@ -63,12 +63,12 @@ Blockly.zelos.ConstantProvider = function() {
   /**
    * @override
    */
-  this.NOTCH_WIDTH = 9 * this.GRID_UNIT;
+  this.NOTCH_WIDTH = 5 * this.GRID_UNIT;
 
   /**
    * @override
    */
-  this.NOTCH_HEIGHT = 2 * this.GRID_UNIT;
+  this.NOTCH_HEIGHT = 3 * this.GRID_UNIT;
 
   /**
    * @override
@@ -687,62 +687,43 @@ Blockly.zelos.ConstantProvider.prototype.shapeFor = function(
  */
 Blockly.zelos.ConstantProvider.prototype.makeNotch = function() {
   var width = this.NOTCH_WIDTH;
-  var height = this.NOTCH_HEIGHT;
+  var height = this.NOTCH_HEIGHT - 1;
 
-  var innerWidth = width / 3;
-  var curveWidth = innerWidth / 3;
+  // The main path for the puzzle tab is made out of a few curves (c and s).
+  // Those curves are defined with relative positions.  The 'up' and 'down'
+  // versions of the paths are the same, but the Y sign flips.  Forward and back
+  // are the signs to use to move the cursor in the direction that the path is
+  // being drawn.
+  function makeMainPath(up) {
+    var forward = up ? -1 : 1;
+    var back = -forward;
 
-  var halfHeight = height / 2;
-  var quarterHeight = halfHeight / 2;
+    var overlap = 2.5;
+    var halfWidth = width / 2;
+    var control1X = halfWidth + overlap;
+    var control2X = halfWidth + 0.5;
+    var control3X = overlap; // 2.5
 
-  function makeMainPath(dir) {
-    return (
-      Blockly.utils.svgPaths.curve('c', [
-        Blockly.utils.svgPaths.point(dir * curveWidth / 2,
-            0),
-        Blockly.utils.svgPaths.point(dir * curveWidth * 3 / 4,
-            quarterHeight / 2),
-        Blockly.utils.svgPaths.point(dir * curveWidth,
-            quarterHeight)
-      ]) +
-      Blockly.utils.svgPaths.line([
-        Blockly.utils.svgPaths.point(dir * curveWidth,
-            halfHeight)
-      ]) +
-      Blockly.utils.svgPaths.curve('c', [
-        Blockly.utils.svgPaths.point(dir * curveWidth / 4,
-            quarterHeight / 2),
-        Blockly.utils.svgPaths.point(dir * curveWidth / 2,
-            quarterHeight),
-        Blockly.utils.svgPaths.point(dir * curveWidth,
-            quarterHeight)
-      ]) +
-      Blockly.utils.svgPaths.lineOnAxis('h', dir * innerWidth) +
-      Blockly.utils.svgPaths.curve('c', [
-        Blockly.utils.svgPaths.point(dir * curveWidth / 2,
-            0),
-        Blockly.utils.svgPaths.point(dir * curveWidth * 3 / 4,
-            -(quarterHeight / 2)),
-        Blockly.utils.svgPaths.point(dir * curveWidth,
-            -quarterHeight)
-      ]) +
-      Blockly.utils.svgPaths.line([
-        Blockly.utils.svgPaths.point(dir * curveWidth,
-            -halfHeight)
-      ]) +
-      Blockly.utils.svgPaths.curve('c', [
-        Blockly.utils.svgPaths.point(dir * curveWidth / 4,
-            -(quarterHeight / 2)),
-        Blockly.utils.svgPaths.point(dir * curveWidth / 2,
-            -quarterHeight),
-        Blockly.utils.svgPaths.point(dir * curveWidth,
-            -quarterHeight)
-      ])
-    );
+    var endPoint1 = Blockly.utils.svgPaths.point(forward * halfWidth, height);
+    var endPoint2 = Blockly.utils.svgPaths.point(forward * halfWidth, -height);
+
+    return Blockly.utils.svgPaths.curve('c',
+        [
+          Blockly.utils.svgPaths.point(forward * control1X, 0),
+          Blockly.utils.svgPaths.point(back * control2X, height),
+          endPoint1
+        ]) +
+        Blockly.utils.svgPaths.curve('s',
+        [
+          Blockly.utils.svgPaths.point(back * control3X, -height),
+          endPoint2
+        ]);
   }
-
-  var pathLeft = makeMainPath(1);
-  var pathRight = makeMainPath(-1);
+  
+  // c 0,10  -8,-8  -8,7.5  s 8,-2.5  8,7.5
+  var pathLeft  = makeMainPath(false);
+  // c 0,-10  -8,8  -8,-7.5  s 8,2.5  8,-7.5
+  var pathRight = makeMainPath(true);
 
   return {
     type: this.SHAPES.NOTCH,

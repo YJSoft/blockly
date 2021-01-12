@@ -36,7 +36,7 @@ Blockly.defineBlocksWithJsonArray([  // BEGIN JSON EXTRACT
   // Block for numeric value.
   {
     "type": "math_number",
-    "message0": "%1",
+    "message0": "‎%1‎",
     "args0": [{
       "type": "field_number",
       "name": "NUM",
